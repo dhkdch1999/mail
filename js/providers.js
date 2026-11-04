@@ -1,6 +1,6 @@
 // 메일 연동: 데모 / Gmail API / Microsoft Graph(Outlook). 모두 읽기 전용.
 // 토큰은 sessionStorage 에만 두고(탭을 닫으면 사라짐), 메일 본문은 메모리에서만 다룬다.
-import { sampleMails } from './sample.js';
+import { sampleMails, personaById } from './sample.js';
 
 const SS = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },
@@ -170,7 +170,8 @@ export async function fetchMails(cfg) {
     if (!cfg.msClientId) throw new Error('Microsoft 애플리케이션(클라이언트) ID를 먼저 입력해 주세요.');
     return outlookFetch(cfg, max);
   }
-  return { account: 'sinip@hanbit.co.kr', mails: sampleMails() };
+  const persona = personaById(cfg.persona);
+  return { account: persona.profile.myEmail, mails: sampleMails(new Date(), persona.id) };
 }
 
 // 로그인 창 없이 바로 불러올 수 있는지(유효한 토큰이 있는지)

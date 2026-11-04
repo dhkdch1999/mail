@@ -15,18 +15,20 @@
   <aside class="side" id="side">
     <a class="brand" href="#summary">말끔<span>.</span></a>
 
-    <button class="ws" type="button" title="워크스페이스">
-      <span class="ws-mark">M</span>
-      <span class="ws-text"><b>내 메일 데스크</b><small>받은편지함 정리</small></span>
-      <span class="ws-caret" aria-hidden="true">⌄</span>
-    </button>
+    <div class="ws-wrap">
+      <button class="ws" id="ws" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="ws-menu">
+        <span class="ws-mark" id="ws-mark">김</span>
+        <span class="ws-text"><b id="ws-name">내 메일 데스크</b><small id="ws-sub">받은편지함 정리</small></span>
+        <span class="ws-caret" aria-hidden="true">⌄</span>
+      </button>
+      <div class="ws-menu" id="ws-menu" role="menu" hidden></div>
+    </div>
 
     <nav class="nav" aria-label="주 메뉴">
       <p class="nav-cap">WORKSPACE</p>
       <a href="#summary" data-route="summary">요약 대시보드</a>
       <a href="#inbox" data-route="inbox">분류함 <em id="nav-inbox"></em></a>
       <a href="#digest" data-route="digest">숨긴 메일 요약 <em id="nav-digest"></em></a>
-      <a href="#tree" data-route="tree">로직 트리</a>
       <p class="nav-cap">MANAGE</p>
       <a href="#profile" data-route="profile">업무 프로필</a>
       <a href="#connect" data-route="connect">메일 연동 설정</a>

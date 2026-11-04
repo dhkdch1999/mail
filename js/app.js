@@ -1,6 +1,6 @@
 import { TREE, LEAVES, ACTION_LABEL, leafTitle } from './tree.js';
 import { classifyAll, replyDraft, normalizeProfile } from './classifier.js';
-import { SAMPLE_PROFILE } from './sample.js';
+import { PERSONAS, personaById } from './sample.js';
 import { PROVIDERS, fetchMails, handleOutlookRedirect, hasToken, disconnect, redirectUri } from './providers.js';
 
 // ───────── 저장소 (이 브라우저의 localStorage)
@@ -11,9 +11,9 @@ const store = {
 };
 
 const state = {
-  cfg: store.get('cfg', { provider: 'demo', googleClientId: '', msClientId: '', msTenant: 'common', maxMails: 50 }),
-  profile: store.get('profile', { ...SAMPLE_PROFILE }),
-  overrides: store.get('overrides', {}),
+  cfg: { provider: 'demo', persona: 'sales', googleClientId: '', msClientId: '', msTenant: 'common', maxMails: 50, ...store.get('cfg', {}) },
+  profile: null,
+  overrides: {},
   mails: [],
   account: '',
   loading: false,
@@ -22,11 +22,21 @@ const state = {
   q: '',
 };
 
+// 프로필과 고친 분류 규칙은 샘플 계정마다, 실제 연결 계정은 따로 저장한다
+const scope = () => (state.cfg.provider === 'demo' ? `demo.${personaById(state.cfg.persona).id}` : 'real');
+const defaultProfile = () => ({ ...personaById(state.cfg.persona).profile });
+function loadScoped() {
+  state.profile = store.get(`profile.${scope()}`, defaultProfile());
+  state.overrides = store.get(`overrides.${scope()}`, {});
+}
+const saveProfile = () => store.set(`profile.${scope()}`, state.profile);
+const saveOverrides = () => store.set(`overrides.${scope()}`, state.overrides);
+loadScoped();
+
 const ROUTES = {
   summary: '요약 대시보드',
   inbox: '분류함',
   digest: '숨긴 메일 요약',
-  tree: '로직 트리',
   profile: '업무 프로필',
   connect: '메일 연동 설정',
 };
@@ -167,7 +177,7 @@ function viewSummary() {
   </div>
   ${noticeBlock()}
   <div class="kpis">
-    <div class="card kpi"><small>받은 메일</small><b>${c.all}<span>건</span></b><p>최근 ${esc(state.cfg.maxMails || 50)}건 기준</p></div>
+    <div class="card kpi"><small>받은 메일</small><b>${c.all}<span>건</span></b><p>${state.cfg.provider === 'demo' ? '최근 30시간 · 샘플' : `최근 ${esc(state.cfg.maxMails || 50)}건 기준`}</p></div>
     <div class="card kpi accent"><small>지금 처리할 메일</small><b>${c.pin}<span>건</span></b><p>급하고 내가 해야 할 일</p></div>
     <div class="card kpi"><small>직접 확인 필요</small><b>${c.human}<span>건</span></b><p>사람 판단이 필요한 메일</p></div>
     <div class="card kpi"><small>자동 정리</small><b>${autoDone}<span>건</span></b><p>보관 ${c.archive} · 후순위 ${c.later} · 회신 ${c.reply}</p></div>
@@ -186,7 +196,7 @@ function viewSummary() {
     </div>
     <div class="stack">
       <section class="card">
-        <div class="card-h"><h2>분류 현황</h2><small>로직 트리 기준</small></div>
+        <div class="card-h"><h2>분류 현황</h2><small>메일 종류별</small></div>
         <div class="card-b">
           <div class="bars">${bars}</div>
           <div class="legend"><span><i style="background:var(--blue)"></i>직접 확인</span><span><i style="background:var(--sky)"></i>자동 처리</span></div>
@@ -210,7 +220,7 @@ function noticeBlock() {
   if (state.cfg.provider !== 'demo' && !state.mails.length && !state.loading) {
     return `<div class="note" style="margin-bottom:16px"><b>${esc(PROVIDERS[state.cfg.provider].label)}</b> 로그인이 필요해요. 위의 "메일 다시 불러오기"를 누르면 로그인 창이 열려요.</div>`;
   }
-  if (state.cfg.provider === 'demo') return `<div class="note" style="margin-bottom:16px">지금은 <b>샘플 메일</b>로 동작 중이에요. 실제 메일함은 <a href="#connect">메일 연동 설정</a>에서 연결하세요.</div>`;
+  if (state.cfg.provider === 'demo') return `<div class="note" style="margin-bottom:16px">지금은 샘플 계정 <b>${esc(personaById(state.cfg.persona).label)}</b>의 메일로 동작 중이에요. 다른 샘플 계정은 왼쪽 위 워크스페이스 버튼에서 바꿀 수 있고, 실제 메일함은 <a href="#connect">메일 연동 설정</a>에서 연결하세요.</div>`;
   return '';
 }
 
@@ -233,7 +243,7 @@ function viewInbox() {
   const chip = (id, label) => `<button class="fchip ${f === id ? 'on' : ''}" data-act="filter" data-f="${id}">${label}<span>${c[id]}</span></button>`;
   return `
   <div class="head">
-    <div><div class="eyebrow">F1 · F3 · F4</div><h1>분류함</h1><p>모든 메일을 로직 트리의 한 칸에 넣었어요. 분류가 틀리면 오른쪽에서 바로 고치세요. 같은 발신자의 다음 메일부터 반영돼요.</p></div>
+    <div><div class="eyebrow">F1 · F3 · F4</div><h1>분류함</h1><p>모든 메일을 종류와 긴급도에 따라 분류했어요. 분류가 틀리면 오른쪽에서 바로 고치세요. 같은 발신자의 다음 메일부터 반영돼요.</p></div>
     <button class="btn primary" data-act="reload" ${state.loading ? 'disabled' : ''}>${state.loading ? '불러오는 중…' : '다시 불러오기'}</button>
   </div>
   ${noticeBlock()}
@@ -271,31 +281,6 @@ function viewDigest() {
   </div>`;
 }
 
-function viewTree() {
-  const c = counts(classified()).leaf;
-  const node = (n) => {
-    if (n.id === 'root') return `<span class="tn root">문제: 과도한 메일 (불필요한 참조 메일로 인한 업무 지연)</span><ul>${n.children.map((x) => `<li>${node(x)}</li>`).join('')}</ul>`;
-    if (!n.children) {
-      const cnt = c[n.id] || 0;
-      return `<span class="tn ${n.auto ? 'auto' : ''}">${esc(n.label)}${n.auto ? ` <span class="act">→ ${ACTION_LABEL[n.action]}</span>` : ''}<span class="cnt">${cnt}</span></span>`;
-    }
-    const sum = Object.keys(LEAVES).filter((id) => LEAVES[id].path.includes(n.label)).reduce((s, id) => s + (c[id] || 0), 0);
-    return `<span class="tn grp">${esc(n.label)}<span class="cnt">${sum}</span></span><ul>${n.children.map((x) => `<li>${node(x)}</li>`).join('')}</ul>`;
-  };
-  return `
-  <div class="head"><div><div class="eyebrow">MECE + 5 Whys</div><h1>로직 트리</h1><p>문제 정의를 MECE로 나눈 트리예요. 숫자는 지금 불러온 메일이 각 칸에 몇 건 들어갔는지 보여줘요.</p></div></div>
-  <div class="tlegend"><span><span class="tn auto">빨강</span> 앱이 자동 처리</span><span><span class="tn">흰색</span> 사람 판단 필요</span></div>
-  <section class="card"><div class="card-b tree">${node(TREE)}</div></section>
-  <section class="card" style="margin-top:16px"><div class="card-h"><h2>5 Whys</h2></div><div class="card-b">
-    <ol class="steps">
-      <li>메일 정리에 시간이 오래 걸린다 → 받은편지함에 나와 무관한 참조·홍보 메일이 섞여 있다.</li>
-      <li>섞여 있다 → 팀 단위로 일괄 참조를 걸고, 홍보·스터디 메일도 같은 편지함으로 온다.</li>
-      <li>직접 걸러야 한다 → 기본 메일함은 나와의 관련도와 긴급도를 구분해 주지 않는다.</li>
-      <li>중요 메일을 놓친다 → 급한 내 업무 메일이 대량의 무관한 메일 사이에 묻힌다.</li>
-      <li><b>근본 원인:</b> 수신 시점에 메일을 관련도·긴급도로 자동 분류하는 장치가 없다.</li>
-    </ol></div></section>`;
-}
-
 const PROFILE_FIELDS = [
   ['sect', '나'],
   ['myName', '이름', '본문에 이 이름이 있으면 "내가 해야 할 일"로 봐요.', 'input'],
@@ -329,7 +314,7 @@ function viewProfile() {
     <div class="form">${fields}</div>
     <div class="btns" style="margin-top:20px">
       <button class="btn primary" type="submit">저장하고 다시 분류</button>
-      <button class="btn" type="button" data-act="sample-profile">데모 프로필 불러오기</button>
+      <button class="btn" type="button" data-act="sample-profile">기본 프로필로 되돌리기</button>
     </div>
   </form></section>`;
 }
@@ -385,7 +370,7 @@ function route() {
 
 function render() {
   const r = route();
-  const views = { summary: viewSummary, inbox: viewInbox, digest: viewDigest, tree: viewTree, profile: viewProfile, connect: viewConnect };
+  const views = { summary: viewSummary, inbox: viewInbox, digest: viewDigest, profile: viewProfile, connect: viewConnect };
   $('#view').innerHTML = views[r]();
   $('#crumb-here').textContent = ROUTES[r];
   document.title = `${ROUTES[r]} — 말끔`;
@@ -398,7 +383,20 @@ function render() {
   $('#me-avatar').textContent = initial;
   $('#top-avatar').textContent = initial;
   $('#me-name').textContent = p.myName || '이름 미설정';
-  $('#me-account').textContent = state.cfg.provider === 'demo' ? '데모 계정' : (state.account || '로그인 필요');
+  $('#me-account').textContent = state.cfg.provider === 'demo' ? `샘플 계정 · ${p.myEmail}` : (state.account || '로그인 필요');
+  const demo = state.cfg.provider === 'demo';
+  const persona = personaById(state.cfg.persona);
+  $('#ws-mark').textContent = demo ? persona.profile.myName.slice(0, 1) : 'M';
+  $('#ws-name').textContent = demo ? persona.label : '내 메일함';
+  $('#ws-sub').textContent = demo ? `${persona.profile.myName} · 샘플 계정` : (state.account || PROVIDERS[state.cfg.provider].label);
+  $('#ws-menu').innerHTML = `<p class="ws-cap">샘플 계정</p>${PERSONAS.map((x) => `
+    <button class="ws-item ${demo && x.id === persona.id ? 'on' : ''}" type="button" role="menuitem" data-act="persona" data-p="${x.id}">
+      <span class="ws-mark">${esc(x.profile.myName.slice(0, 1))}</span>
+      <span class="ws-item-text"><b>${esc(x.label)}</b><small>${esc(x.profile.myName)} · ${esc(x.profile.myEmail)}</small></span>
+      ${demo && x.id === persona.id ? '<i aria-hidden="true">✓</i>' : ''}
+    </button>`).join('')}
+    <p class="ws-cap">실제 메일함</p>
+    <a class="ws-item ${demo ? '' : 'on'}" href="#connect" role="menuitem" data-act="ws-close"><span class="ws-mark">M</span><span class="ws-item-text"><b>Gmail · Outlook 연결</b><small>${demo ? '메일 연동 설정으로 이동' : esc(state.account || '로그인 필요')}</small></span></a>`;
   const chip = $('#source-chip');
   chip.textContent = state.cfg.provider === 'demo' ? '데모 데이터' : `${PROVIDERS[state.cfg.provider].label}${state.account ? ' 연결됨' : ''}`;
   chip.classList.toggle('live', state.cfg.provider !== 'demo' && !!state.account);
@@ -424,9 +422,9 @@ async function load({ interactive = false } = {}) {
     state.account = account;
     state.mails = mails;
     const p = normalizeProfile(state.profile);
-    if (state.cfg.provider !== 'demo' && account && (!p.myEmail || p.myEmail === SAMPLE_PROFILE.myEmail)) {
+    if (state.cfg.provider !== 'demo' && account && (!p.myEmail || PERSONAS.some((x) => x.profile.myEmail === p.myEmail))) {
       state.profile = { ...state.profile, myEmail: account };
-      store.set('profile', state.profile);
+      saveProfile();
       toast('메일 주소를 연결한 계정으로 바꿨어요. 업무 프로필도 채워 주세요.');
     }
     notifyPinned();
@@ -479,7 +477,7 @@ function setOverride(id, leaf) {
   const m = state.mails.find((x) => x.id === id);
   if (!m?.from?.email) return;
   state.overrides = { ...state.overrides, [m.from.email.toLowerCase()]: leaf };
-  store.set('overrides', state.overrides);
+  saveOverrides();
   toast(`${m.from.name || m.from.email} 메일은 이제 "${leafTitle(leaf)}"로 분류해요.`);
   render();
 }
@@ -497,17 +495,26 @@ document.addEventListener('click', (e) => {
     if (m) setOverride(m.id, HUMAN_SIBLING[m.result.leaf] || 'mine_later_me');
   } else if (act === 'unrule') {
     const o = { ...state.overrides }; delete o[t.dataset.email];
-    state.overrides = o; store.set('overrides', o); render();
+    state.overrides = o; saveOverrides(); render();
   } else if (act === 'sample-profile') {
-    state.profile = { ...SAMPLE_PROFILE }; store.set('profile', state.profile); render(); toast('데모 프로필을 불러왔어요.');
+    state.profile = defaultProfile(); saveProfile(); render(); toast('샘플 계정의 기본 프로필로 되돌렸어요.');
   } else if (act === 'notify') {
     Notification.requestPermission().then((p) => { if (p === 'granted') { toast('알림을 켰어요.'); notifyPinned(); } render(); });
   } else if (act === 'copy-uri') {
     navigator.clipboard.writeText($('#redir').textContent).then(() => toast('주소를 복사했어요.'), () => toast('복사하지 못했어요.', true));
+  } else if (act === 'persona') {
+    toggleWs(false);
+    disconnect(); state.account = ''; state.mails = []; state.error = ''; state.filter = 'all'; state.q = '';
+    state.cfg = { ...state.cfg, provider: 'demo', persona: t.dataset.p }; store.set('cfg', state.cfg);
+    loadScoped();
+    toast(`샘플 계정 "${personaById(t.dataset.p).label}"으로 바꿨어요.`); load();
+  } else if (act === 'ws-close') {
+    toggleWs(false);
   } else if (act === 'disconnect') {
     disconnect(); state.account = ''; state.mails = []; state.error = '';
     state.cfg = { ...state.cfg, provider: 'demo' }; store.set('cfg', state.cfg);
-    toast('연결을 해제하고 데모 데이터로 돌아왔어요.'); load();
+    loadScoped();
+    toast('연결을 해제하고 샘플 계정으로 돌아왔어요.'); load();
   }
 });
 
@@ -543,7 +550,7 @@ document.addEventListener('submit', (e) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.myEmail.trim())) errs.myEmail = '메일 주소 형식을 확인해 주세요.';
     if (showErrors(errs)) return;
     state.profile = normalizeProfile(data);
-    store.set('profile', state.profile);
+    saveProfile();
     toast('저장했어요. 새 프로필로 다시 분류했어요.');
     render();
   }
@@ -556,9 +563,11 @@ document.addEventListener('submit', (e) => {
     const n = Number(data.maxMails);
     if (!(n >= 10 && n <= 100)) errs.maxMails = '10~100 사이로 입력해 주세요.';
     if (showErrors(errs)) return;
-    if (data.provider !== state.cfg.provider) { state.mails = []; state.account = ''; }
-    state.cfg = { provider: data.provider, googleClientId: data.googleClientId.trim(), msClientId: data.msClientId.trim(), msTenant: data.msTenant.trim() || 'common', maxMails: n };
+    const changed = data.provider !== state.cfg.provider;
+    if (changed) { state.mails = []; state.account = ''; }
+    state.cfg = { ...state.cfg, provider: data.provider, googleClientId: data.googleClientId.trim(), msClientId: data.msClientId.trim(), msTenant: data.msTenant.trim() || 'common', maxMails: n };
     store.set('cfg', state.cfg);
+    if (changed) loadScoped();
     load({ interactive: true });
   }
 });
@@ -577,6 +586,16 @@ const closeSide = () => { side.classList.remove('open'); scrim.classList.remove(
 $('#burger').onclick = () => { side.classList.add('open'); scrim.classList.add('open'); };
 scrim.onclick = closeSide;
 side.addEventListener('click', (e) => { if (e.target.closest('a')) closeSide(); });
+
+// 워크스페이스(샘플 계정) 메뉴
+const wsBtn = $('#ws'), wsMenu = $('#ws-menu');
+function toggleWs(open = wsMenu.hidden) {
+  wsMenu.hidden = !open;
+  wsBtn.setAttribute('aria-expanded', String(open));
+}
+wsBtn.onclick = (e) => { e.stopPropagation(); toggleWs(); };
+document.addEventListener('click', (e) => { if (!wsMenu.hidden && !e.target.closest('.ws-wrap')) toggleWs(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !wsMenu.hidden) { toggleWs(false); wsBtn.focus(); } });
 
 $('#foot-close').onclick = () => { $('#foot').classList.add('hide'); store.set('footHidden', true); };
 if (store.get('footHidden', false)) $('#foot').classList.add('hide');
