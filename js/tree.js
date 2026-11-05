@@ -61,7 +61,12 @@ export const TREE = {
                     { id: 'study_ind_out', label: '사외 이슈 리포트', auto: false },
                   ]
                 },
-                { id: 'study_lang', label: '언어 관련 (영어·중국어·일본어·독어·불어·기타)', auto: false },
+                {
+                  id: 'study_lang', label: '언어 관련', children: [
+                    { id: 'study_lang_like', label: '관심 있는 언어', auto: false },
+                    { id: 'study_lang_skip', label: '관심 없는 언어', auto: true, action: 'archive' },
+                  ]
+                },
               ]
             },
           ]

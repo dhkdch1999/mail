@@ -121,7 +121,7 @@ const DEFS = [
       teamAddresses: [`sales-all@${DOMAIN}`],
       workKeywords: ['A사', '월간 실적', '견적', '단가표'],
       jobKeywords: ['영업', '실적 분석', '고객 관리'],
-      interests: ['엑셀', '데이터 분석'],
+      interests: ['엑셀', '데이터 분석', '영어'],
       backupFor: ['박선임'],
       ...COMMON_SENDERS,
     },
@@ -188,7 +188,7 @@ const DEFS = [
       teamAddresses: [`finance-all@${DOMAIN}`],
       workKeywords: ['결산', '비용 정산', '세금계산서', '법인카드'],
       jobKeywords: ['회계', '세무', '재무 분석'],
-      interests: ['엑셀', '자격증'],
+      interests: ['엑셀', '자격증', '중국어'],
       backupFor: ['최과장'],
       ...COMMON_SENDERS,
     },
@@ -255,7 +255,7 @@ const DEFS = [
       teamAddresses: [`dev-all@${DOMAIN}`],
       workKeywords: ['결제 모듈', '배포', '장애', '결제 API'],
       jobKeywords: ['개발', '백엔드', '클라우드'],
-      interests: ['인공지능', '해커톤'],
+      interests: ['인공지능', '해커톤', '영어'],
       backupFor: ['김책임'],
       ...COMMON_SENDERS,
     },
@@ -343,7 +343,12 @@ function buildRaw(def) {
       else if (spec.to) to = spec.to(me);
       else to = [me];
       const cc = spec.cc ? spec.cc(me) : leaf === 'aware_backup' ? [me] : [];
-      out.push({ expected: leaf, from: leaf.startsWith('study_job') && !spec.from ? STUDY : from, to, cc, subject, body });
+      let expected = leaf;
+      if (leaf === 'study_lang') {
+        const like = def.profile.interests.some((k) => `${subject} ${body}`.includes(k));
+        expected = like ? 'study_lang_like' : 'study_lang_skip';
+      }
+      out.push({ expected, from: leaf.startsWith('study_job') && !spec.from ? STUDY : from, to, cc, subject, body });
     });
   }
   // 섞되, 급한 메일은 최근에 받은 쪽(앞쪽)에 흩어 둔다

@@ -103,7 +103,11 @@ export function classify(mail, rawProfile, overrides = {}) {
   const studyWord = hasAny(subject, STUDY_WORDS);
   if ((studySender || studyWord) && !request) {
     const lang = hasAny(subject, LANG_WORDS);
-    if (lang) return { leaf: 'study_lang', reasons: [`언어 학습 메일이에요 ("${lang}")`], signals };
+    if (lang) {
+      const reasons = [`언어 학습 메일이에요 ("${lang}")`];
+      reasons.push(interestHit ? `관심 주제 "${interestHit}"와 맞아요` : '관심 주제에 등록한 언어가 아니에요');
+      return { leaf: interestHit ? 'study_lang_like' : 'study_lang_skip', reasons, signals };
+    }
     const ind = hasAny(subject, INDUSTRY_WORDS);
     if (ind && !jobHit) {
       return { leaf: internal ? 'study_ind_in' : 'study_ind_out', reasons: [`산업 리포트예요 (${internal ? '사내' : '사외'} 발신)`], signals };

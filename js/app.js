@@ -58,6 +58,7 @@ const HUMAN_SIBLING = {
   promo_in_skip: 'promo_in_like',
   promo_out_skip: 'promo_out_like',
   study_job_other: 'study_job_mine',
+  study_lang_skip: 'study_lang_like',
   wrong_quiet_title: 'mine_later_me',
 };
 
@@ -298,7 +299,7 @@ const PROFILE_FIELDS = [
   ['workKeywords', '담당 업무 키워드', '프로젝트명, 거래처, 자주 쓰는 업무 용어. 쉼표로 구분.', 'textarea'],
   ['jobKeywords', '직무 키워드', '내 직무 스터디인지 판별할 때 써요.', 'textarea'],
   ['backupFor', '내가 백업하는 담당자', '이 사람 업무 메일은 참조로 와도 "백업할 일"로 남겨요.', 'input'],
-  ['interests', '관심 주제', '홍보 메일 중 이 주제는 숨기지 않아요.', 'input'],
+  ['interests', '관심 주제', '홍보·언어 학습 메일 중 이 주제가 들어간 것만 남기고 나머지는 숨겨요. 예: 엑셀, 영어', 'input'],
   ['sect', '발신자 규칙'],
   ['promoSenders', '홍보·뉴스레터 발신자', '주소 전체나 일부(예: news@). 쉼표로 구분.', 'textarea'],
   ['studySenders', '스터디·리포트 발신자', '주소 전체나 일부. 쉼표로 구분.', 'textarea'],
