@@ -95,6 +95,13 @@ function counts(list) {
   return c;
 }
 
+function spanLabel(list) {
+  if (!list.length) return '0시간';
+  const oldest = Math.min(...list.map((m) => new Date(m.date).getTime()));
+  const h = Math.max(1, Math.round((Date.now() - oldest) / 3600000));
+  return h < 48 ? `${h}시간` : `${Math.round(h / 24)}일`;
+}
+
 function fmtTime(iso) {
   const d = new Date(iso);
   const now = new Date();
@@ -177,7 +184,7 @@ function viewSummary() {
   </div>
   ${noticeBlock()}
   <div class="kpis">
-    <div class="card kpi"><small>받은 메일</small><b>${c.all}<span>건</span></b><p>${state.cfg.provider === 'demo' ? '최근 30시간 · 샘플' : `최근 ${esc(state.cfg.maxMails || 50)}건 기준`}</p></div>
+    <div class="card kpi"><small>받은 메일</small><b>${c.all}<span>건</span></b><p>${state.cfg.provider === 'demo' ? `최근 ${spanLabel(list)} · 샘플` : `최근 ${esc(state.cfg.maxMails || 50)}건 기준`}</p></div>
     <div class="card kpi accent"><small>지금 처리할 메일</small><b>${c.pin}<span>건</span></b><p>급하고 내가 해야 할 일</p></div>
     <div class="card kpi"><small>직접 확인 필요</small><b>${c.human}<span>건</span></b><p>사람 판단이 필요한 메일</p></div>
     <div class="card kpi"><small>자동 정리</small><b>${autoDone}<span>건</span></b><p>보관 ${c.archive} · 후순위 ${c.later} · 회신 ${c.reply}</p></div>
@@ -208,7 +215,7 @@ function viewSummary() {
       </section>
       <a class="card card-b" href="#digest" style="text-decoration:none;display:block">
         <div class="eyebrow">숨긴 메일 요약</div>
-        <b style="font-size:16px">오늘 숨긴 메일 ${c.archive + c.later}건</b>
+        <b style="font-size:16px">자동으로 숨긴 메일 ${c.archive + c.later}건</b>
         <p style="margin:4px 0 0;color:var(--ink-2)">잘못 숨겨진 메일이 없는지 한 번만 훑어보세요 →</p>
       </a>
     </div>
@@ -269,7 +276,7 @@ function viewDigest() {
       </article>`).join('')}</div>`).join('');
   return `
   <div class="head">
-    <div><div class="eyebrow">F5 · 안전장치</div><h1>오늘 숨긴 메일 ${list.length}건</h1><p>자동 보관·후순위로 보낸 메일이에요. 잘못 숨겨진 메일은 "이건 중요해요"로 되돌리면, 같은 발신자는 다음부터 확인 필요로 분류돼요.</p></div>
+    <div><div class="eyebrow">F5 · 안전장치</div><h1>자동으로 숨긴 메일 ${list.length}건</h1><p>자동 보관·후순위로 보낸 메일이에요. 잘못 숨겨진 메일은 "이건 중요해요"로 되돌리면, 같은 발신자는 다음부터 확인 필요로 분류돼요.</p></div>
   </div>
   <div class="grid2">
     <section class="card"><div class="card-b">${groups || '<div class="empty">숨긴 메일이 없어요.</div>'}</div></section>

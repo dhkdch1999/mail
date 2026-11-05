@@ -30,6 +30,17 @@ for (const persona of PERSONAS) {
   });
 }
 
+test('김신입 샘플 계정에는 메일이 약 280통 있다', () => {
+  const n = sampleMails(NOW, 'sales').length;
+  assert.ok(n >= 270 && n <= 290, `메일 ${n}통`);
+});
+
+test('급한 메일은 최근 받은 쪽에 모여 있다', () => {
+  const mails = sampleMails(NOW, 'sales');
+  const last = Math.max(...mails.map((m, i) => (m.expected.startsWith('mine_urgent') ? i : -1)));
+  assert.ok(last < 80, `가장 오래된 급한 메일 위치 ${last}`);
+});
+
 test('사용자가 고친 분류(발신자 기준)를 우선 적용한다', () => {
   const persona = PERSONAS[0];
   const m = sampleMails(NOW, persona.id).find((x) => x.expected === 'promo_out_skip');

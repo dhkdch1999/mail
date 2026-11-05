@@ -1,5 +1,6 @@
 // 데모용 샘플 계정(페르소나)과 계정별 받은편지함.
 // 모든 메일에 expected(로직 트리 리프)를 달아 분류기 테스트에 쓴다.
+import { SALES_EXTRA } from './sample-sales-extra.js';
 
 const p = (name, email) => ({ name, email });
 const DOMAIN = 'hanbit.co.kr';
@@ -114,6 +115,7 @@ const DEFS = [
   {
     id: 'sales',
     label: '영업기획팀 신입',
+    extra: SALES_EXTRA,
     profile: {
       myName: '김신입', myEmail: `sinip@${DOMAIN}`, myDept: '영업기획팀',
       teamAddresses: [`sales-all@${DOMAIN}`],
@@ -327,8 +329,8 @@ function buildRaw(def) {
   const me = p(def.profile.myName, def.profile.myEmail);
   const team = p(def.teamName, def.profile.teamAddresses[0]);
   const out = [];
-  const specs = { ...SHARED, ...def.leaves };
-  for (const [leaf, spec] of Object.entries(specs)) {
+  const entries = [...Object.entries({ ...SHARED, ...def.leaves }), ...(def.extra || [])];
+  for (const [leaf, spec] of entries) {
     spec.items.forEach(([subject, body, toOverride], i) => {
       const froms = spec.from || [def.boss];
       const from = froms[i % froms.length];
@@ -344,7 +346,11 @@ function buildRaw(def) {
       out.push({ expected: leaf, from: leaf.startsWith('study_job') && !spec.from ? STUDY : from, to, cc, subject, body });
     });
   }
-  return shuffle(out, def.id.length * 7919 + 17);
+  // 섞되, 급한 메일은 최근에 받은 쪽(앞쪽)에 흩어 둔다
+  const isUrgent = (m) => m.expected.startsWith('mine_urgent');
+  const result = shuffle(out.filter((m) => !isUrgent(m)), def.id.length * 7919 + 17);
+  shuffle(out.filter(isUrgent), 31).forEach((m, j) => result.splice(j * 3 + 1, 0, m));
+  return result;
 }
 
 export const PERSONAS = DEFS.map((d) => ({ id: d.id, label: d.label, profile: d.profile }));
@@ -354,7 +360,7 @@ export function personaById(id) {
   return PERSONAS.find((x) => x.id === id) || PERSONAS[0];
 }
 
-// now 기준으로 최근 약 30시간 동안 받은 메일로 만든다
+// now 기준으로 약 24분 간격으로 받은 메일로 만든다 (74통 ≈ 30시간, 280통 ≈ 5일)
 export function sampleMails(now = new Date(), personaId = 'sales') {
   const def = DEFS.find((d) => d.id === personaId) || DEFS[0];
   return buildRaw(def).map((m, i) => ({
