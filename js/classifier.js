@@ -1,6 +1,6 @@
 // 규칙 기반 메일 분류기 (F1 수신 위치, F2 프로필, F3 긴급도·요청, F4 오발송)
 // 순수 함수만 두어 브라우저와 Node 테스트에서 모두 쓴다.
-import { LEAVES } from './tree.js';
+import { LEAVES } from './tree.js?v=20261105-0924';
 
 export const DEFAULT_PROFILE = {
   myName: '',

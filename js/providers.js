@@ -1,6 +1,6 @@
 // 메일 연동: 데모 / Gmail API / Microsoft Graph(Outlook). 모두 읽기 전용.
 // 토큰은 sessionStorage 에만 두고(탭을 닫으면 사라짐), 메일 본문은 메모리에서만 다룬다.
-import { sampleMails, personaById } from './sample.js';
+import { sampleMails, personaById } from './sample.js?v=20261105-0924';
 
 const SS = {
   get: (k) => { try { return sessionStorage.getItem(k); } catch { return null; } },

@@ -1,7 +1,9 @@
-import { TREE, LEAVES, ACTION_LABEL, leafTitle } from './tree.js';
-import { classifyAll, replyDraft, normalizeProfile } from './classifier.js';
-import { PERSONAS, personaById } from './sample.js';
-import { PROVIDERS, fetchMails, handleOutlookRedirect, hasToken, disconnect, redirectUri } from './providers.js';
+import { TREE, LEAVES, ACTION_LABEL, leafTitle } from './tree.js?v=20261105-0924';
+import { classifyAll, replyDraft, normalizeProfile } from './classifier.js?v=20261105-0924';
+import { PERSONAS, personaById } from './sample.js?v=20261105-0924';
+import { PROVIDERS, fetchMails, handleOutlookRedirect, hasToken, disconnect, redirectUri } from './providers.js?v=20261105-0924';
+
+export const APP_VERSION = '20261105-0924';
 
 // ───────── 저장소 (이 브라우저의 localStorage)
 const KEY = 'malkkeum.';
@@ -408,7 +410,7 @@ function render() {
   const chip = $('#source-chip');
   chip.textContent = state.cfg.provider === 'demo' ? '데모 데이터' : `${PROVIDERS[state.cfg.provider].label}${state.account ? ' 연결됨' : ''}`;
   chip.classList.toggle('live', state.cfg.provider !== 'demo' && !!state.account);
-  $('#foot-status').textContent = state.cfg.provider === 'demo' ? '샘플 데이터 · 이 브라우저에 저장' : '읽기 전용 연결 · 설정은 이 브라우저에 저장';
+  $('#foot-status').textContent = `${state.cfg.provider === 'demo' ? '샘플 데이터 · 이 브라우저에 저장' : '읽기 전용 연결 · 설정은 이 브라우저에 저장'} · 버전 ${APP_VERSION}`;
 }
 
 function toast(msg, err = false) {

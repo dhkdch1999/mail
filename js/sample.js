@@ -1,6 +1,6 @@
 // 데모용 샘플 계정(페르소나)과 계정별 받은편지함.
 // 모든 메일에 expected(로직 트리 리프)를 달아 분류기 테스트에 쓴다.
-import { SALES_EXTRA } from './sample-sales-extra.js';
+import { SALES_EXTRA } from './sample-sales-extra.js?v=20261105-0924';
 
 const p = (name, email) => ({ name, email });
 const DOMAIN = 'hanbit.co.kr';

@@ -44,6 +44,14 @@ python3 -m http.server 8000   # http://localhost:8000
 node --test tests/classifier.test.mjs   # 분류 엔진 테스트 (로직 트리 21개 리프 전부)
 ```
 
+## 배포
+
+푸시하기 전에 버전을 올려 주세요. 모든 CSS·JS 주소에 `?v=버전`이 붙어서, 브라우저가 예전 파일을 섞어 쓰지 않습니다. 화면 하단에 현재 버전이 표시됩니다.
+
+```bash
+node scripts/bump-version.mjs
+```
+
 ## 메일 연동 (읽기 전용)
 
 ### Gmail
